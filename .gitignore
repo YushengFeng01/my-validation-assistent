@@ -1,3 +1,5 @@
 venv 
 *.bash 
 .idea 
+*.log 
+data_dir 

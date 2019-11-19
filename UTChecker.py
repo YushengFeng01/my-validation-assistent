@@ -1,35 +1,63 @@
 # -*- coding: utf-8 -*-
+from logging.handlers import RotatingFileHandler
+import logging
+import argparse
+import StringIO
+import gzip
+import os
+
 from lxml import etree
 
-class CheckUT:
-    def __init__(self):
+def build_logger(name="rrc_validation_assisant"):
+    logger = logging.getLogger(name)
+    if not logger.handlers:
+        logger.setLevel(logging.DEBUG)
+        file_name = os.path.normpath(os.path.join('.', name+'.log'))
+        fh = RotatingFileHandler(file_name, mode="a", maxBytes=100*1024*1024, backupCount=10, encoding=None, delay=0)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+    return logger
+
+class CheckUT(object):
+    UT_XPATH = "/REC/static_data/summary/EWUID/@uid"
+
+    def __init__(self, data_path):
         super(CheckUT, self).__init__()
+        self._data_path = os.path.normpath(os.path.realpath(os.path.abspath(data_path)))
+        self.logger = build_logger()
 
-    def ut_in_dais_baseline(self, author_index_ut, dais_baseline_ut):
-        with open(author_index_ut, 'r') as f1:
-            with open(dais_baseline_ut, 'r') as f2:
-                ut_in_index = set([i.strip() for i in f1])
-                ut_in_baseline = set([i.strip() for i in f2])
-                print(ut_in_index)
-                print(ut_in_baseline)
-                # union = ut_in_index & ut_in_baseline
-                print(ut_in_index-ut_in_baseline)
-                print(ut_in_baseline-ut_in_index)
+    def extract_xml(self, ut):
+        for root, subdir, files in os.walk(self._data_path):
+            for f in files:
+                if not f.endswith('.gz'):
+                    continue
 
-    def extract(self, xpath, msg=None):
-        tree = etree.parse('D:\\dev\\rrc validation\\ut.xml')
-        nodes = tree.xpath(xpath)
-        if len(nodes):
-            with open('dais_ng_ids.txt', 'w') as r:
-                msg and r.write("# {0}\n\n".format(msg))
-                for i in nodes:
-                    r.write(i+'\n')
+                p_ = os.path.normpath(os.path.join(root, f))
+                with gzip.open(p_, 'rb') as gzfile:
+                    for rec in gzfile:
+                        if not len(rec):
+                            continue
 
-    def extract_xml(self):
-        pass
+                        tree = etree.parse(StringIO.StringIO(rec))
+                        uts = tree.xpath(CheckUT.UT_XPATH)
+                        for ut_ in uts:
+                            self.logger.debug(p_)
+                            if ut == ut_:
+                                self.logger.info(p_)
+                                d = ut.rpartition(':')[1] + '.xml'
+                                with open(d, 'w') as r:
+                                    r.write(rec)
+
+                                break
 
 
 if __name__ == '__main__':
-    checker = CheckUT()
-    checker.extract("/REC/static_data/summary/names/name[@role='author' or @role='anon'][@lang_id='en' or not(@lang_id)][@display='Y' or not(@display)]/@daisng_id",
-                    "These daisng_ids have the ut WOS:000209230400010.")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-u', '--ut', help='The ut you want to extract', required=True, default="")
+    parser.add_argument('-d', '--data_dir', help='The directory path where the xml gzip files are',
+                        required=False, default=None)
+    args = parser.parse_args()
+
+    checker = CheckUT(args.data_dir)
+    checker.extract_xml(args.ut)
