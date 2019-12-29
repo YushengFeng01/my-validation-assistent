@@ -34,6 +34,8 @@ class CheckUT(object):
                     continue
 
                 p_ = os.path.normpath(os.path.join(root, f))
+                self.logger.debug(p_)
+
                 with gzip.open(p_, 'rb') as gzfile:
                     for rec in gzfile:
                         if not len(rec):
@@ -42,7 +44,7 @@ class CheckUT(object):
                         tree = etree.parse(StringIO.StringIO(rec))
                         uts = tree.xpath(CheckUT.UT_XPATH)
                         for ut_ in uts:
-                            self.logger.debug(p_)
+                           # self.logger.debug(p_)
                             if ut == ut_:
                                 self.logger.info(p_)
                                 d = ut.rpartition(':')[2] + '.xml'
