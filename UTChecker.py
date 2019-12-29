@@ -45,11 +45,12 @@ class CheckUT(object):
                             self.logger.debug(p_)
                             if ut == ut_:
                                 self.logger.info(p_)
-                                d = ut.rpartition(':')[1] + '.xml'
+                                d = ut.rpartition(':')[2] + '.xml'
+                                self.logger.info(d)
                                 with open(d, 'w') as r:
                                     r.write(rec)
 
-                                break
+                                return
 
 
 if __name__ == '__main__':
