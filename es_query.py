@@ -98,6 +98,7 @@ class QueryAssistant(object):
                 cluster_1['daisngids'] = i.strip()
 
                 query_string = build_author_dais_id_fmt(cluster_1)
+                #print("author query: {0}".format(query_string))
                 response = self.send_request(query_string)
                 total = response['hits']['total']
                 if total > 0:
@@ -108,6 +109,7 @@ class QueryAssistant(object):
                     print("id {0} isn't in author index now".format(i.strip()))
 
                 query_string = build_wos_dais_ng_id_fmt(cluster_1)
+                #print("wos query: {0}".format(query_string))
                 response = self.send_request(query_string)
                 total = response['hits']['total']
                 if total > 0:
@@ -117,11 +119,15 @@ class QueryAssistant(object):
                     print("id {0} isn't in wos index now".format(i.strip()))
 
                 print("id {0}, ut_in_author_not_in_wos {1}".format(i.strip(), ut_in_author-ut_in_wos))
+                print("id {0}, ut in author and wos {1}".format(i.strip(), ut_in_wos&ut_in_author))
+                print("="*100)
+                ut_in_author.clear()
+                ut_in_wos.clear()
 
 
 if __name__ == '__main__':
-    ids_file = './20191227-incrementals-1577404738-ut-in-author-not-in-wos-dais_ng_id.txt'
-    uts_file = '20191227-incrementals-1577404738-ut-in-author-not-in-wos.txt'
+    ids_file = './incrementals-1579046338-ut-in-author-not-in-wos-dais_ng_id.txt'
+    uts_file = './incrementals-1579046338-ut-in-author-not-in-wos.txt'
     es_request = QueryAssistant()
     es_request.buid_wos_dais_id_request(ids_file)
     es_request.build_author_dais_id_request(ids_file)
